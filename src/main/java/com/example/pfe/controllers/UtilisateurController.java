@@ -7,7 +7,9 @@ import com.example.pfe.security.JwtUtil;
 import com.example.pfe.services.EmailService;
 import com.example.pfe.services.UtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -68,7 +70,7 @@ public class UtilisateurController {
             utilisateur.setReferralCode(referralCode);
 
             Utilisateur newUser = utilisateurService.createUser(utilisateur);
-            String verificationLink = "http://localhost:4200/verif?email=" + newUser.getEmail() + "&referralCode=" + referralCode;
+            String verificationLink = "http://localhost:4200/verify?email=" + newUser.getEmail() + "&referralCode=" + referralCode;
             emailService.sendVerificationEmail(newUser.getEmail(), verificationLink);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
@@ -157,7 +159,7 @@ public class UtilisateurController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You can only view your own profile");
         }
 
-        String imageUrl = "http://localhost:8081/api/admin/uploads/images/" + user.getImage();
+        String imageUrl = "http://localhost:8081/api/utilisateurs/uploads/images/" + user.getImage();
 
         UtilisateurResponseDTO responseDTO = new UtilisateurResponseDTO(
                 user.getNom(),
@@ -169,5 +171,37 @@ public class UtilisateurController {
         );
 
         return ResponseEntity.ok(responseDTO);
+    }
+
+
+    
+    @GetMapping("/uploads/images/{filename}")
+    public ResponseEntity<FileSystemResource> getImage(@PathVariable String filename) {
+        try {
+            Path path = Paths.get(uploadDir + filename);
+            FileSystemResource resource = new FileSystemResource(path.toFile());
+
+            if (resource.exists() && resource.isReadable()) {
+                return ResponseEntity.ok()
+                        .contentType(getMediaType(filename))
+                        .body(resource);
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    private MediaType getMediaType(String filename) {
+        if (filename.endsWith(".png")) {
+            return MediaType.IMAGE_PNG;
+        } else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
+            return MediaType.IMAGE_JPEG;
+        } else if (filename.endsWith(".gif")) {
+            return MediaType.IMAGE_GIF;
+        } else {
+            return MediaType.APPLICATION_OCTET_STREAM;
+        }
     }
 }

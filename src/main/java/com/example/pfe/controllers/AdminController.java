@@ -161,33 +161,4 @@ public class AdminController {
     }
 
 
-    @GetMapping("/uploads/images/{filename}")
-    public ResponseEntity<FileSystemResource> getImage(@PathVariable String filename) {
-        try {
-            Path path = Paths.get(uploadDir + filename);
-            FileSystemResource resource = new FileSystemResource(path.toFile());
-
-            if (resource.exists() && resource.isReadable()) {
-                return ResponseEntity.ok()
-                        .contentType(getMediaType(filename))
-                        .body(resource);
-            } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-            }
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
-
-    private MediaType getMediaType(String filename) {
-        if (filename.endsWith(".png")) {
-            return MediaType.IMAGE_PNG;
-        } else if (filename.endsWith(".jpg") || filename.endsWith(".jpeg")) {
-            return MediaType.IMAGE_JPEG;
-        } else if (filename.endsWith(".gif")) {
-            return MediaType.IMAGE_GIF;
-        } else {
-            return MediaType.APPLICATION_OCTET_STREAM;
-        }
-    }
 }
